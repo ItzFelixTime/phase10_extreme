@@ -39,6 +39,10 @@ const btnSubmit  = $("#submitScore");
 const scoreStatus= $("#scoreStatus");
 
 const playerList  = $("#playerList");
+// Chat-DOM
+const chatBox = $("#chatBox");
+const chatInput = $("#chatInput");
+const chatSend = $("#chatSend");
 
 function setStatus(text, ok=false){
   statusTag.textContent = (ok ? "🟢 " : "🔴 ") + text;
@@ -110,6 +114,15 @@ function renderPlayers(){
   }
 
   renderPhase();
+}
+function addChatMessage(name, text) {
+  const div = document.createElement("div");
+  div.className = "chatMsg";
+  div.innerHTML = `<span class="chatName">${name}:</span> ${text}`;
+  chatBox.appendChild(div);
+
+  // Auto-scroll zu neuem Eintrag
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 // ============================
@@ -183,6 +196,10 @@ function connect(){
       }
       scoreStatus.textContent = "Punkte aktualisiert.";
     }
+    if (msg.type === "chat") {
+  const sender = players[msg.id]?.name || "Unbekannt";
+  addChatMessage(sender, msg.text);
+}
   };
 }
 
@@ -247,6 +264,21 @@ btnSubmit.onclick = () => {
   scorePanel.classList.add("hidden");
   scoreStatus.textContent = "";
 };
+function sendChat() {
+  const msg = chatInput.value.trim();
+  if (!msg) return;
+  chatInput.value = "";
+
+  send({
+    type: "chat",
+    text: msg
+  });
+}
+
+chatSend.onclick = sendChat;
+chatInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") sendChat();
+});
 
 // Start
 connect();
