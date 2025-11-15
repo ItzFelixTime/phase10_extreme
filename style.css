@@ -172,3 +172,20 @@ button.ghost:hover{background:#1a1a1a;}
 }
 
 .hidden{display:none}
+.chatBox {
+  background: #0e0e0e;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  height: 260px;
+  overflow-y: auto;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.chatMsg {
+  margin-bottom: 6px;
+}
+.chatName {
+  font-weight: 600;
+  color: var(--accent);
+}
