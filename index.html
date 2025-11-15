@@ -3,161 +3,52 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Phase 10 – Autistic Master</title>
-  <meta name="theme-color" content="#0a0a0a" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
-  <style>
-    :root{--bg:#0a0a0a;--panel:#121212;--muted:#9aa0a6;--text:#f1f3f4;--accent:#2563eb;--border:#232323}
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;background:var(--bg);color:var(--text);font:16px system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif}
-    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:16px}
-    .card{width:100%;max-width:680px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));
-      border:1px solid var(--border);border-radius:20px;overflow:hidden}
-    header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
-    header h1{margin:0;font-size:20px}
-    header p{margin:2px 0 0;color:var(--muted);font-size:13px}
-    .phase{padding:20px}
-    .kicker{color:var(--muted);font-size:13px;margin-bottom:6px}
-    .row{display:flex;gap:12px;align-items:center;margin-bottom:8px}
-    .num{font-size:54px;font-weight:900;line-height:1}
-    .title{font-size:18px;font-weight:700}
-    .rule{color:#d0d0d0}
-    ul{color:#b8b8b8;margin:8px 0 0 18px}
-    .progress{margin-top:16px}
-    .bar{height:8px;background:#1b1b1b;border-radius:999px;overflow:hidden}
-    .bar>div{height:100%;background:var(--accent);width:0}
-    .hint{margin-top:6px;color:var(--muted);font-size:12px}
-    .grid{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:16px}
-    button{appearance:none;border:0;border-radius:12px;padding:12px 14px;background:#1c1c1c;color:#fff;cursor:pointer}
-    button:hover{background:#262626}
-    .primary{background:var(--accent)}
-    .primary:hover{filter:brightness(1.1)}
-    .center{text-align:center}
-    details{padding:0 20px 20px}
-    summary{cursor:pointer;color:#d6d6d6}
-    .jump{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px;margin-top:10px}
-    .chip{padding:8px;border:1px solid var(--border);background:#0f0f0f;border-radius:10px;color:#e8e8e8}
-    .chip.active{background:var(--accent);border-color:#2e6cf0;color:#fff}
-    .footer{color:#9a9a9a;font-size:11px;text-align:center;margin-top:10px;padding:8px}
-  </style>
+  <title>Phase 10 – Autistic Master (Online)</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <header>
-        <div>
-          <h1>Phase 10 – Autistic Master</h1>
-          <p>Spezialregeln • Offline-fähig • Zum Home-Screen hinzufügen</p>
-        </div>
-        <small style="opacity:.7">v1.0</small>
-      </header>
 
-      <div class="phase">
-        <div class="kicker">Aktuelle Phase</div>
-        <div class="row">
-          <div class="num" id="num">1</div>
-          <div>
-            <div class="title" id="title">Phase 1</div>
-            <div class="rule" id="rule">Zwei Paare + 1 Drilling.</div>
-          </div>
-        </div>
-        <ul id="examples"></ul>
+<div class="card">
+  <h1>Phase 10 – Autistic Master (Online)</h1>
 
-        <div class="progress">
-          <div class="bar"><div id="barfill"></div></div>
-          <div class="hint" id="hint">1 / 10 abgeschlossen</div>
-        </div>
-
-        <div class="grid">
-          <button id="prev">◀︎ Zurück</button>
-          <button class="primary" id="next">Nächste Phase ▶︎</button>
-        </div>
-
-        <div class="center" style="margin-top:8px">
-          <button id="reset" style="background:#101010;color:#cfcfcf;padding:8px 10px;border-radius:10px">
-            Zurück zu Phase 1
-          </button>
-        </div>
-      </div>
-
-      <details>
-        <summary>Schnellsprung zu einer Phase</summary>
-        <div class="jump" id="jump"></div>
-      </details>
-    </div>
+  <div>
+    <label>Name:</label>
+    <input id="nameInput" />
   </div>
 
-  <div class="footer">
-    Tipp: Im Browser-Menü „Zum Home-Bildschirm“ hinzufügen – dann öffnet sich die App wie nativ (PWA).
+  <h2>Deine Phase</h2>
+  <div class="phase-box">
+    <button id="phasePrev">◀</button>
+    <span id="myPhase" class="phase-number">1</span>
+    <button id="phaseNext">▶</button>
   </div>
 
-  <script>
-    // --- Datenmodell deiner 10 Spezial-Phasen ---
-    const phases = [
-      {id:1, title:'Phase 1', rule:'Zwei Paare + 1 Drilling.', examples:['z.B. (3,3) (9,9) (5,5,5)']},
-      {id:2, title:'Phase 2', rule:'Viererfolge, jede Karte muss eine andere Farbe haben.', examples:['z.B. 4–5–6–7 in Blau/Rot/Gelb/Lila (alle Farben verschieden)']},
-      {id:3, title:'Phase 3', rule:'Zwei Drillinge: einer gerade Zahlen, der andere ungerade.', examples:['z.B. (2,2,2) und (7,7,7)']},
-      {id:4, title:'Phase 4', rule:'Fünfer-Reihe; Kartennachbarn müssen sich abwechseln (1,2,1,2,1 oder 5,4,5,4,5).', examples:['Muster A-B-A-B-A mit benachbarten Zahlen']},
-      {id:5, title:'Phase 5', rule:'Sechs Karten derselben Farbe; die Summe aller Karten muss über 40 liegen.', examples:['z.B. 6× Blau, Summe > 40']},
-      {id:6, title:'Phase 6', rule:'Sechserfolge; die Farben in beliebiger Reihenfolge (Muster darf sich wiederholen).', examples:['z.B. Grün, Rot, Gelb, Lila, Grün, Rot']},
-      {id:7, title:'Phase 7', rule:'Ein Paar und zwei unterschiedliche Drillinge.', examples:['z.B. (K,K), (3,3,3) & (8,8,8)']},
-      {id:8, title:'Phase 8', rule:'Vier niedrige (1–6) und vier hohe Karten (7–12).', examples:['z.B. 1,2,3,6 & 8,9,10,12']},
-      {id:9, title:'Phase 9', rule:'Fünf blaue Karten.', examples:['Beliebige Werte, Hauptsache 5× Blau']},
-      {id:10, title:'Phase 10', rule:'Zwei Fünferfolgen.', examples:['z.B. 2–3–4–5–6 und 8–9–10–11–12']},
-    ];
+  <button id="finishBtn" class="primary">Phase beendet!</button>
 
-    // --- State + Persistenz ---
-    const storageKey = 'phase10_autistic_master_currentPhase';
-    let current = parseInt(localStorage.getItem(storageKey) || '1', 10);
-    if (!Number.isFinite(current) || current < 1 || current > phases.length) current = 1;
+  <hr>
 
-    // --- DOM Helpers ---
-    const $ = (sel) => document.querySelector(sel);
-    const num = $('#num'), title = $('#title'), rule = $('#rule'), examplesEl = $('#examples');
-    const barfill = $('#barfill'), hint = $('#hint');
-    const prev = $('#prev'), next = $('#next'), reset = $('#reset');
-    const jump = $('#jump');
+  <h3>Punkte eingeben</h3>
+  <div id="scorePanel" class="hidden">
+    <div id="finisherInfo" class="muted"></div>
 
-    function save(){ localStorage.setItem(storageKey, String(current)); }
+    <label>Karten 0–9</label>
+    <input id="low" type="number" value="0" min="0">
 
-    function render(){
-      const p = phases[current - 1];
-      num.textContent = p.id;
-      title.textContent = p.title;
-      rule.textContent = p.rule;
-      examplesEl.innerHTML = (p.examples || []).map(x => `<li>${x}</li>`).join('');
-      const pct = (current / phases.length) * 100;
-      barfill.style.width = pct + '%';
-      hint.textContent = `${current} / ${phases.length} abgeschlossen`;
+    <label>Karten 10–12</label>
+    <input id="high" type="number" value="0" min="0">
 
-      prev.disabled = current === 1;
-      next.disabled = current === phases.length;
+    <label>Joker</label>
+    <input id="joker" type="number" value="0" min="0">
 
-      // Schnellsprung-Chips neu aufbauen
-      jump.innerHTML = '';
-      for (const ph of phases) {
-        const b = document.createElement('button');
-        b.className = 'chip' + (ph.id === current ? ' active' : '');
-        b.textContent = ph.id;
-        b.onclick = () => { current = ph.id; save(); render(); };
-        jump.appendChild(b);
-      }
-    }
+    <button id="submitScore" class="primary">Weiter geht’s</button>
+  </div>
 
-    prev.onclick = () => { if (current > 1) { current--; save(); render(); } };
-    next.onclick = () => { if (current < phases.length) { current++; save(); render(); } };
-    reset.onclick = () => { current = 1; save(); render(); };
+  <hr>
 
-    // --- PWA: Service Worker registrieren ---
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
-      });
-    }
+  <h2>Spieler</h2>
+  <div id="playerList"></div>
+</div>
 
-    render();
-  </script>
+<script src="client.js"></script>
 </body>
 </html>
