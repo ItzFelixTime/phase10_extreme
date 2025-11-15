@@ -7,46 +7,105 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+<div class="wrap">
+  <div class="card">
+    <header>
+      <div>
+        <h1>Phase 10 – Autistic Master</h1>
+        <small class="muted">Online Server • Jeder eigene Phase • Punkte pro Runde</small>
+      </div>
+      <div class="row">
+        <span id="statusTag" class="tag">🔴 Getrennt</span>
+        <span class="tag">Du: <b id="selfNameTag">—</b></span>
+      </div>
+    </header>
 
-<div class="card">
-  <h1>Phase 10 – Autistic Master (Online)</h1>
+    <section class="content">
+      <div class="panel" style="margin-bottom:12px">
+        <div class="row" style="justify-content:space-between;align-items:flex-end;gap:12px">
+          <div style="flex:1">
+            <label class="kicker">Dein Name</label>
+            <input id="nameInput" placeholder="Name eingeben" />
+          </div>
+          <button id="btnReconnect" class="ghost">🔄 Neu verbinden</button>
+        </div>
+      </div>
 
-  <div>
-    <label>Name:</label>
-    <input id="nameInput" />
+      <div class="two">
+        <!-- Linke Seite: Phasen & Scoring -->
+        <div class="panel">
+          <div class="kicker">Deine aktuelle Phase</div>
+          <div class="row" style="align-items:flex-end;gap:16px">
+            <div class="num" id="num">1</div>
+            <div>
+              <div id="title" style="font-weight:700;font-size:18px">Phase 1</div>
+              <div id="rule" class="muted">Zwei Paare + 1 Drilling.</div>
+            </div>
+          </div>
+
+          <ul id="examples" style="margin:8px 0 0 18px;color:#cfcfcf"></ul>
+
+          <div class="bar" style="margin-top:10px">
+            <div id="barfill"></div>
+          </div>
+          <div id="hint" class="muted" style="margin-top:6px;font-size:12px">1 / 10</div>
+
+          <div class="row" style="margin-top:10px">
+            <button id="btnPrev">◀︎ Zurück</button>
+            <button id="btnNext" class="primary">Nächste Phase ▶︎</button>
+            <button id="btnReset">Zurück zu 1</button>
+          </div>
+
+          <details style="margin-top:8px">
+            <summary>Schnellsprung</summary>
+            <div id="jump" class="jump"></div>
+          </details>
+
+          <div class="row" style="margin-top:14px">
+            <button id="btnFinish" class="primary stretch">Phase beendet!</button>
+          </div>
+
+          <!-- Scoring Panel -->
+          <div id="scorePanel" class="panel inset hidden" style="margin-top:14px">
+            <div class="kicker">Wertung für diese Runde</div>
+            <div class="muted" style="margin-bottom:6px">
+              <span id="finisherInfo">–</span>
+            </div>
+
+            <div id="scoreInputs" class="row">
+              <div class="scoreCol">
+                <label class="kicker">Karten 0–9</label>
+                <input id="low" type="number" min="0" value="0">
+              </div>
+              <div class="scoreCol">
+                <label class="kicker">Karten 10–12</label>
+                <input id="high" type="number" min="0" value="0">
+              </div>
+              <div class="scoreCol">
+                <label class="kicker">Joker</label>
+                <input id="joker" type="number" min="0" value="0">
+              </div>
+              <div class="scoreCol">
+                <label class="kicker">Deine Punkte</label>
+                <input id="outPoints" type="number" value="0" readonly>
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:10px">
+              <button id="submitScore" class="primary">Weiter geht’s</button>
+              <span id="scoreStatus" class="muted"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rechte Seite: Spieler-Liste -->
+        <div class="panel">
+          <div class="kicker">Spieler & Fortschritt</div>
+          <div id="playerList" class="roster" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </section>
   </div>
-
-  <h2>Deine Phase</h2>
-  <div class="phase-box">
-    <button id="phasePrev">◀</button>
-    <span id="myPhase" class="phase-number">1</span>
-    <button id="phaseNext">▶</button>
-  </div>
-
-  <button id="finishBtn" class="primary">Phase beendet!</button>
-
-  <hr>
-
-  <h3>Punkte eingeben</h3>
-  <div id="scorePanel" class="hidden">
-    <div id="finisherInfo" class="muted"></div>
-
-    <label>Karten 0–9</label>
-    <input id="low" type="number" value="0" min="0">
-
-    <label>Karten 10–12</label>
-    <input id="high" type="number" value="0" min="0">
-
-    <label>Joker</label>
-    <input id="joker" type="number" value="0" min="0">
-
-    <button id="submitScore" class="primary">Weiter geht’s</button>
-  </div>
-
-  <hr>
-
-  <h2>Spieler</h2>
-  <div id="playerList"></div>
 </div>
 
 <script src="client.js"></script>
