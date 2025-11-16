@@ -12,7 +12,7 @@
     <header>
       <div>
         <h1>Phase 10 – Autistic Master</h1>
-        <small class="muted">Online Rooms • Host mit Code • Chat</small>
+        <small class="muted">Online Rooms • KI-Avatare • Chat</small>
       </div>
       <div class="row">
         <span id="statusTag" class="tag">🔴 Nicht verbunden</span>
@@ -26,7 +26,6 @@
     <section id="screenStart" class="content">
       <div class="panel">
         <div class="kicker">Willkommen</div>
-        <p class="muted">Wähle einen Namen & Avatar, dann erstelle einen Raum oder tritt einem Raum bei.</p>
 
         <div class="row" style="align-items:flex-end;gap:12px">
           <div style="flex:1">
@@ -35,24 +34,35 @@
           </div>
           <div style="width:80px;text-align:center">
             <label class="kicker">Avatar</label>
-            <div id="avatarSelected" style="font-size:32px;line-height:1;margin-top:4px">😄</div>
+            <div id="avatarSelected" class="avatarPreview">😄</div>
           </div>
         </div>
 
+        <!-- Avatar-Auswahl -->
         <div id="avatarGrid" class="avatarGrid" style="margin-top:8px"></div>
       </div>
 
+      <!-- KI-Avatar Generator -->
       <div class="panel" style="margin-top:12px">
-        <div class="row">
-          <button id="btnCreateRoom" class="primary stretch">Ich hoste (neuen Raum erstellen)</button>
-        </div>
+        <div class="kicker">Eigenen KI-Avatar generieren</div>
+        <input id="avatarPrompt" placeholder="z. B. 'cute neon fox wizard, glowing eyes'">
+        <button id="btnGenAvatar" class="primary" style="margin-top:6px">
+          KI-Avatar generieren
+        </button>
+        <div id="avatarGenStatus" class="muted" style="margin-top:4px"></div>
+      </div>
+
+      <div class="panel" style="margin-top:12px">
+        <button id="btnCreateRoom" class="primary stretch">Ich hoste (neuen Raum erstellen)</button>
+
         <div class="row" style="margin-top:8px;align-items:center">
           <div style="flex:1">
             <label class="kicker">Raumcode</label>
             <input id="joinCode" placeholder="z.B. 48291" />
           </div>
-          <button id="btnJoinRoom" class="stretch">Raum beitreten</button>
+          <button id="btnJoinRoom" class="stretch">Beitreten</button>
         </div>
+
         <div id="startError" class="errorText"></div>
       </div>
     </section>
@@ -60,7 +70,7 @@
     <!-- ============ LOBBY ============ -->
     <section id="screenLobby" class="content hidden">
       <div class="panel">
-        <div class="row" style="justify-content:space-between;align-items:center">
+        <div class="row" style="justify-content:space-between">
           <div>
             <div class="kicker">Lobby</div>
             <div>Raumcode: <b id="lobbyRoomCode">—</b></div>
@@ -71,103 +81,99 @@
       </div>
 
       <div class="panel" style="margin-top:12px">
-        <div class="kicker">Spieler im Raum</div>
+        <div class="kicker">Spieler</div>
         <div id="lobbyPlayers" class="roster" style="margin-top:8px"></div>
       </div>
 
       <div class="panel" style="margin-top:12px">
-        <div class="row">
-          <button id="btnLobbyStart" class="primary stretch">Spiel starten</button>
-        </div>
-        <div id="lobbyInfo" class="muted" style="margin-top:4px">
-          Nur der Host kann das Spiel starten.
-        </div>
+        <button id="btnLobbyStart" class="primary stretch">Spiel starten</button>
+        <div class="muted" style="margin-top:4px">Nur Host kann starten.</div>
       </div>
     </section>
 
     <!-- ============ SPIEL ============ -->
     <section id="screenGame" class="content hidden">
       <div class="two">
-        <!-- Linke Seite: Phase & Scoring -->
+
+        <!-- Phase + Punkte -->
         <div class="panel">
-          <div class="kicker">Deine aktuelle Phase</div>
-          <div class="row" style="align-items:flex-end;gap:16px">
+
+          <div class="kicker">Deine Phase</div>
+
+          <div class="row" style="gap:16px;align-items:flex-end">
             <div class="num" id="num">1</div>
             <div>
-              <div id="title" style="font-weight:700;font-size:18px">Phase 1</div>
-              <div id="rule" class="muted">Zwei Paare + 1 Drilling.</div>
+              <div id="title" style="font-size:18px;font-weight:700">Phase 1</div>
+              <div id="rule" class="muted">—</div>
             </div>
           </div>
 
-          <ul id="examples" style="margin:8px 0 0 18px;color:#cfcfcf"></ul>
+          <ul id="examples" class="exampleList"></ul>
 
-          <div class="bar" style="margin-top:10px">
-            <div id="barfill"></div>
-          </div>
-          <div id="hint" class="muted" style="margin-top:6px;font-size:12px">1 / 10</div>
+          <div class="bar"><div id="barfill"></div></div>
+          <div id="hint" class="muted small">1 / 10</div>
 
           <div class="row" style="margin-top:10px">
-            <button id="btnPrev">◀︎ Zurück</button>
-            <button id="btnNext" class="primary">Nächste Phase ▶︎</button>
-            <button id="btnReset">Zurück zu 1</button>
+            <button id="btnPrev">◀ Zurück</button>
+            <button id="btnNext" class="primary">Weiter ▶</button>
+            <button id="btnReset">Reset</button>
           </div>
 
-          <details style="margin-top:8px">
+          <details style="margin-top:10px">
             <summary>Schnellsprung</summary>
             <div id="jump" class="jump"></div>
           </details>
 
-          <div class="row" style="margin-top:14px">
-            <button id="btnFinish" class="primary stretch">Phase beendet!</button>
-          </div>
+          <button id="btnFinish" class="primary stretch" style="margin-top:12px">Phase beendet!</button>
 
           <!-- Wertung -->
           <div id="scorePanel" class="panel inset hidden" style="margin-top:14px">
-            <div class="kicker">Wertung für diese Runde</div>
-            <div id="finisherInfo" class="muted" style="margin-bottom:6px">–</div>
+            <div class="kicker">Wertung</div>
+            <div id="finisherInfo" class="muted small"></div>
 
-            <div id="scoreInputs" class="row">
+            <div id="scoreInputs" class="row" style="margin-top:8px">
               <div class="scoreCol">
-                <label class="kicker">Karten 0–9</label>
+                <label>Karten 0–9</label>
                 <input id="low" type="number" min="0" value="0">
               </div>
               <div class="scoreCol">
-                <label class="kicker">Karten 10–12</label>
+                <label>Karten 10–12</label>
                 <input id="high" type="number" min="0" value="0">
               </div>
               <div class="scoreCol">
-                <label class="kicker">Joker</label>
+                <label>Joker</label>
                 <input id="joker" type="number" min="0" value="0">
               </div>
               <div class="scoreCol">
-                <label class="kicker">Deine Punkte</label>
-                <input id="outPoints" type="number" value="0" readonly>
+                <label>Punkte</label>
+                <input id="outPoints" readonly value="0">
               </div>
             </div>
 
-            <div class="row" style="margin-top:10px">
-              <button id="submitScore" class="primary">Weiter geht’s</button>
-              <span id="scoreStatus" class="muted"></span>
-            </div>
+            <button id="submitScore" class="primary" style="margin-top:10px">Weiter geht’s</button>
+            <div id="scoreStatus" class="muted small"></div>
           </div>
         </div>
 
-        <!-- Rechte Seite: Spieler & Chat -->
+        <!-- Spieler + Chat -->
         <div>
+
           <div class="panel">
-            <div class="kicker">Spieler & Fortschritt</div>
+            <div class="kicker">Spielerübersicht</div>
             <div id="playerList" class="roster" style="margin-top:8px"></div>
           </div>
 
-          <div class="panel" style="margin-top:14px">
+          <div class="panel" style="margin-top:12px">
             <div class="kicker">Chat</div>
             <div id="chatBox" class="chatBox"></div>
-            <div class="row" style="margin-top:10px">
-              <input id="chatInput" placeholder="Nachricht eingeben…" />
+            <div class="row" style="margin-top:8px">
+              <input id="chatInput" placeholder="Nachricht…">
               <button id="chatSend" class="primary">Senden</button>
             </div>
           </div>
+
         </div>
+
       </div>
     </section>
 
