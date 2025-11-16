@@ -7,48 +7,62 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
 <div class="wrap">
   <div class="card">
     <header>
       <div>
         <h1>Phase 10 – Autistic Master</h1>
-        <small class="muted">Online Rooms • Avatare • Chat</small>
+        <small class="muted">Online • Lobby • KI-Avatare • Chat</small>
       </div>
+
       <div class="row">
-        <span id="statusTag" class="tag">🔴 Nicht verbunden</span>
+        <span id="statusTag" class="tag">🔴 Offline</span>
         <span class="tag">Raum: <b id="roomTag">—</b></span>
         <span class="tag">Du: <b id="selfNameTag">—</b></span>
-        <button id="btnReconnect" class="ghost" title="Neu verbinden">🔄</button>
+        <button id="btnReconnect" class="ghost">🔄</button>
       </div>
     </header>
 
-    <!-- ============ STARTSCREEN ============ -->
+    <!-- ========= STARTSCREEN ========= -->
     <section id="screenStart" class="content">
       <div class="panel">
-        <div class="kicker">Willkommen</div>
+        <div class="kicker">Dein Profil</div>
 
-        <div class="row" style="align-items:flex-end;gap:12px">
+        <div class="row" style="gap:16px;align-items:flex-end">
           <div style="flex:1">
-            <label class="kicker">Dein Name</label>
-            <input id="startName" placeholder="Name" />
+            <label class="kicker">Name</label>
+            <input id="startName" placeholder="Dein Name" />
           </div>
+
           <div style="width:80px;text-align:center">
             <label class="kicker">Avatar</label>
-            <div id="avatarSelected" class="avatarPreview">🐶</div>
+            <div id="avatarSelected" class="avatarPreview">😄</div>
           </div>
         </div>
 
-        <!-- Avatar-Auswahl -->
-        <div id="avatarGrid" class="avatarGrid" style="margin-top:8px"></div>
+        <!-- Emoji-Avatar Auswahl -->
+        <div id="avatarGrid" class="avatarGrid"></div>
       </div>
 
-      <div class="panel" style="margin-top:12px">
-        <button id="btnCreateRoom" class="primary stretch">Ich hoste (neuen Raum erstellen)</button>
+      <!-- KI-Avatar Generator -->
+      <div class="panel" style="margin-top:14px">
+        <div class="kicker">Eigenen KI-Avatar generieren</div>
+        <input id="avatarPrompt" placeholder="z. B. 'a cute purple fox wizard'">
+        <button id="btnGenAvatar" class="primary" style="margin-top:6px">
+          KI-Avatar generieren
+        </button>
+        <div id="avatarGenStatus" class="muted small"></div>
+      </div>
 
-        <div class="row" style="margin-top:8px;align-items:center">
+      <!-- Raum -->
+      <div class="panel" style="margin-top:14px">
+        <button id="btnCreateRoom" class="primary stretch">Ich hoste (Neuen Raum erstellen)</button>
+
+        <div class="row" style="margin-top:8px">
           <div style="flex:1">
             <label class="kicker">Raumcode</label>
-            <input id="joinCode" placeholder="z.B. 48291" />
+            <input id="joinCode" placeholder="z.B. 48291">
           </div>
           <button id="btnJoinRoom" class="stretch">Beitreten</button>
         </div>
@@ -57,54 +71,57 @@
       </div>
     </section>
 
-    <!-- ============ LOBBY ============ -->
+    <!-- ========= LOBBY ========= -->
     <section id="screenLobby" class="content hidden">
       <div class="panel">
         <div class="row" style="justify-content:space-between">
           <div>
             <div class="kicker">Lobby</div>
-            <div>Raumcode: <b id="lobbyRoomCode">—</b></div>
-            <div id="lobbyRoleHint" class="muted"></div>
+            Raumcode: <b id="lobbyRoomCode">—</b>
+            <div id="lobbyRoleHint" class="muted small"></div>
           </div>
+
           <button id="btnLeaveLobby" class="ghost">Lobby verlassen</button>
         </div>
       </div>
 
-      <div class="panel" style="margin-top:12px">
+      <div class="panel" style="margin-top:14px">
         <div class="kicker">Spieler</div>
-        <div id="lobbyPlayers" class="roster" style="margin-top:8px"></div>
+        <div id="lobbyPlayers" class="roster"></div>
       </div>
 
-      <div class="panel" style="margin-top:12px">
-        <button id="btnLobbyStart" class="primary stretch">Spiel starten</button>
-        <div class="muted" style="margin-top:4px">Nur Host kann starten.</div>
-      </div>
+      <button id="btnLobbyStart" class="primary stretch" style="margin-top:14px">
+        Spiel starten
+      </button>
+      <div class="muted small">Nur Host kann starten.</div>
     </section>
 
-    <!-- ============ SPIEL ============ -->
+    <!-- ========= SPIEL ========= -->
     <section id="screenGame" class="content hidden">
+
       <div class="two">
 
-        <!-- Phase + Punkte -->
+        <!-- Linke Seite -->
         <div class="panel">
+
           <div class="kicker">Deine Phase</div>
 
-          <div class="row" style="gap:16px;align-items:flex-end">
+          <div class="row" style="gap:12px;align-items:flex-end;margin-top:6px">
             <div class="num" id="num">1</div>
             <div>
-              <div id="title" style="font-size:18px;font-weight:700">Phase 1</div>
+              <div id="title" class="phaseTitle">Phase 1</div>
               <div id="rule" class="muted">—</div>
             </div>
           </div>
 
           <ul id="examples" class="exampleList"></ul>
 
-          <div class="bar"><div id="barfill"></div></div>
+          <div class="bar" style="margin-top:6px"><div id="barfill"></div></div>
           <div id="hint" class="muted small">1 / 10</div>
 
           <div class="row" style="margin-top:10px">
-            <button id="btnPrev">◀ Zurück</button>
-            <button id="btnNext" class="primary">Weiter ▶</button>
+            <button id="btnPrev">◀</button>
+            <button id="btnNext" class="primary">▶</button>
             <button id="btnReset">Reset</button>
           </div>
 
@@ -113,14 +130,16 @@
             <div id="jump" class="jump"></div>
           </details>
 
-          <button id="btnFinish" class="primary stretch" style="margin-top:12px">Phase beendet!</button>
+          <button id="btnFinish" class="primary stretch" style="margin-top:14px">
+            Phase beendet!
+          </button>
 
           <!-- Wertung -->
-          <div id="scorePanel" class="panel inset hidden" style="margin-top:14px">
+          <div id="scorePanel" class="panel inset hidden" style="margin-top:18px">
             <div class="kicker">Wertung</div>
             <div id="finisherInfo" class="muted small"></div>
 
-            <div id="scoreInputs" class="row" style="margin-top:8px">
+            <div class="row" style="margin-top:8px">
               <div class="scoreCol">
                 <label>Karten 0–9</label>
                 <input id="low" type="number" min="0" value="0">
@@ -144,24 +163,28 @@
           </div>
         </div>
 
-        <!-- Spieler + Chat -->
+        <!-- Rechte Seite -->
         <div>
+
           <div class="panel">
             <div class="kicker">Spielerübersicht</div>
-            <div id="playerList" class="roster" style="margin-top:8px"></div>
+            <div id="playerList" class="roster"></div>
           </div>
 
-          <div class="panel" style="margin-top:12px">
+          <div class="panel" style="margin-top:14px">
             <div class="kicker">Chat</div>
             <div id="chatBox" class="chatBox"></div>
+
             <div class="row" style="margin-top:8px">
               <input id="chatInput" placeholder="Nachricht…">
               <button id="chatSend" class="primary">Senden</button>
             </div>
           </div>
+
         </div>
 
       </div>
+
     </section>
 
   </div>
