@@ -1,407 +1,480 @@
-// client.js
+// ===============================
+// CONFIG
+// ===============================
+const SERVER_URL = "wss://phase10-extreme.onrender.com";
 
-const WS_URL = "wss://phase10-extreme.onrender.com";
-let ws = null;
+// ===============================
+// DOM HELPERS
+// ===============================
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
 
-let myId = null;
-let myRoomId = null;
-let hostId = null;
-let players = {}; // id -> {name, avatar, phase, score}
-let currentScreen = "start";
-let myAvatar = "🐶";
+function show(id) { $(id).classList.remove("hidden"); }
+function hide(id) { $(id).classList.add("hidden"); }
 
-const AVATARS = [
-  "🐶","🐱","🐸","🐵","🐼","🦊","🐯","🐰","🐙","🐧","🦁","🐢",
-  "😄","😂","🙂","😎","🤓","😡","😱","😴","😍","🤯","😇","🤠"
-];
-
-// ------ DOM ------
-const $ = s => document.querySelector(s);
-
-// Header
-const statusTag     = $("#statusTag");
-const roomTag       = $("#roomTag");
-const selfNameTag   = $("#selfNameTag");
-const btnReconnect  = $("#btnReconnect");
+// ===============================
+// DOM ELEMENTS
+// ===============================
 
 // Screens
 const screenStart = $("#screenStart");
 const screenLobby = $("#screenLobby");
-const screenGame  = $("#screenGame");
+const screenGame = $("#screenGame");
 
-// Start
-const startName      = $("#startName");
+// UI tags
+const statusTag = $("#statusTag");
+const roomTag = $("#roomTag");
+const selfNameTag = $("#selfNameTag");
+
+// Startscreen
+const startName = $("#startName");
 const avatarSelected = $("#avatarSelected");
-const avatarGrid     = $("#avatarGrid");
-const btnCreateRoom  = $("#btnCreateRoom");
-const joinCode       = $("#joinCode");
-const btnJoinRoom    = $("#btnJoinRoom");
-const startError     = $("#startError");
+const avatarGrid = $("#avatarGrid");
+const avatarPrompt = $("#avatarPrompt");
+const btnGenAvatar = $("#btnGenAvatar");
+const avatarGenStatus = $("#avatarGenStatus");
+const btnCreateRoom = $("#btnCreateRoom");
+const btnJoinRoom = $("#btnJoinRoom");
+const joinCode = $("#joinCode");
+const startError = $("#startError");
 
 // Lobby
 const lobbyRoomCode = $("#lobbyRoomCode");
 const lobbyRoleHint = $("#lobbyRoleHint");
-const lobbyPlayers  = $("#lobbyPlayers");
-const btnLeaveLobby = $("#btnLeaveLobby");
+const lobbyPlayers = $("#lobbyPlayers");
 const btnLobbyStart = $("#btnLobbyStart");
+const btnLeaveLobby = $("#btnLeaveLobby");
 
-// Game – Phase
-const num       = $("#num");
-const titleEl   = $("#title");
-const ruleEl    = $("#rule");
-const examplesEl= $("#examples");
-const barfill   = $("#barfill");
-const hintEl    = $("#hint");
-const jump      = $("#jump");
-const btnPrev   = $("#btnPrev");
-const btnNext   = $("#btnNext");
-const btnReset  = $("#btnReset");
+// Spielscreen
+const num = $("#num");
+const title = $("#title");
+const rule = $("#rule");
+const examplesEl = $("#examples");
+const barfill = $("#barfill");
+const hint = $("#hint");
+const btnPrev = $("#btnPrev");
+const btnNext = $("#btnNext");
+const btnReset = $("#btnReset");
 const btnFinish = $("#btnFinish");
+const jump = $("#jump");
 
-// Game – Score
-const scorePanel   = $("#scorePanel");
+const scorePanel = $("#scorePanel");
 const finisherInfo = $("#finisherInfo");
-const scoreInputs  = $("#scoreInputs");
-const low    = $("#low");
-const high   = $("#high");
-const joker  = $("#joker");
+const lowInput = $("#low");
+const highInput = $("#high");
+const jokerInput = $("#joker");
 const outPoints = $("#outPoints");
-const btnSubmit  = $("#submitScore");
-const scoreStatus= $("#scoreStatus");
+const submitScore = $("#submitScore");
+const scoreStatus = $("#scoreStatus");
 
-// Players & Chat
-const playerList = $("#playerList");
-const chatBox    = $("#chatBox");
-const chatInput  = $("#chatInput");
-const chatSend   = $("#chatSend");
+// Chat
+const chatBox = $("#chatBox");
+const chatInput = $("#chatInput");
+const chatSend = $("#chatSend");
 
-// ------ Helpers ------
+// Misc
+const btnReconnect = $("#btnReconnect");
 
-function setStatus(text, ok=false){
-  statusTag.textContent = (ok ? "🟢 " : "🔴 ") + text;
-}
 
-function showScreen(name){
-  currentScreen = name;
-  screenStart.classList.add("hidden");
-  screenLobby.classList.add("hidden");
-  screenGame .classList.add("hidden");
-  if(name==="start") screenStart.classList.remove("hidden");
-  if(name==="lobby") screenLobby.classList.remove("hidden");
-  if(name==="game")  screenGame .classList.remove("hidden");
-}
-
-function currentPhaseId(){
-  if(!myId || !players[myId]) return 1;
-  const p = players[myId].phase || 1;
-  return Math.max(1, Math.min(10, p));
-}
-
-// ------ Phasen ------
+// ===============================
+// GAME DATA
+// ===============================
 const phases = [
-  {id:1,title:"Phase 1",rule:"Zwei Paare + 1 Drilling.",examples:["z.B. (3,3) (9,9) (5,5,5)"]},
-  {id:2,title:"Phase 2",rule:"Viererfolge, jede Karte muss eine andere Farbe haben.",examples:["z.B. 4–5–6–7 mit vier verschiedenen Farben"]},
-  {id:3,title:"Phase 3",rule:"Zwei Drillinge: einer gerade Zahlen, der andere ungerade.",examples:["z.B. (2,2,2) und (7,7,7)"]},
-  {id:4,title:"Phase 4",rule:"Fünfer-Reihe; Kartennachbarn wechseln sich ab.",examples:["Muster 1–2–1–2–1 oder 5–4–5–4–5"]},
-  {id:5,title:"Phase 5",rule:"Sechs Karten derselben Farbe; Summe > 40.",examples:["z.B. 6× Blau, Gesamtsumme über 40"]},
-  {id:6,title:"Phase 6",rule:"Sechserfolge; Farben beliebig.",examples:["z.B. Grün, Rot, Gelb, Lila, Grün, Rot"]},
-  {id:7,title:"Phase 7",rule:"Ein Paar und zwei unterschiedliche Drillinge.",examples:["(K,K), (3,3,3), (8,8,8)"]},
-  {id:8,title:"Phase 8",rule:"Vier niedrige (1–6) und vier hohe Karten (7–12).",examples:["z.B. 1,2,3,6 & 8,9,10,12"]},
-  {id:9,title:"Phase 9",rule:"Fünf blaue Karten.",examples:["Beliebige Werte, Hauptsache 5× Blau"]},
-  {id:10,title:"Phase 10",rule:"Zwei Fünferfolgen.",examples:["2–3–4–5–6 und 8–9–10–11–12"]},
+  { id:1, title:"Phase 1", rule:"Zwei Paare + 1 Drilling", examples:["(3,3) (9,9) (5,5,5)"] },
+  { id:2, title:"Phase 2", rule:"Viererfolge, jede Karte andere Farbe", examples:["4–5–6–7 (alle Farben verschieden)"] },
+  { id:3, title:"Phase 3", rule:"Zwei Drillinge (gerade + ungerade)", examples:["(2,2,2) und (7,7,7)"] },
+  { id:4, title:"Phase 4", rule:"ABABA-Muster (Nachbarn wechseln)", examples:["1,2,1,2,1"] },
+  { id:5, title:"Phase 5", rule:"6 Karten gleiche Farbe, Summe > 40", examples:["6× Blau, Summe z.B. 42"] },
+  { id:6, title:"Phase 6", rule:"Sechserfolge (Farben egal)", examples:["G,R,G,R,G,R"] },
+  { id:7, title:"Phase 7", rule:"Ein Paar + zwei unterschiedliche Drillinge", examples:["(K,K), (3,3,3), (8,8,8)"] },
+  { id:8, title:"Phase 8", rule:"4× niedrig (1–6) + 4× hoch (7–12)", examples:["1,2,3,4 + 9,10,11,12"] },
+  { id:9, title:"Phase 9", rule:"5 blaue Karten", examples:["Beliebige Werte"] },
+  { id:10, title:"Phase 10", rule:"Zwei Fünferfolgen", examples:["2–3–4–5–6 & 8–9–10–11–12"] }
 ];
 
-function renderPhase(){
-  const id = currentPhaseId();
-  const ph = phases[id-1] || phases[0];
-  num.textContent   = ph.id;
-  titleEl.textContent = ph.title;
-  ruleEl.textContent  = ph.rule;
-  examplesEl.innerHTML = (ph.examples||[]).map(x=>`<li>${x}</li>`).join("");
-  barfill.style.width  = (ph.id/10*100) + "%";
-  hintEl.textContent   = `${ph.id} / 10`;
+let ws = null;
 
-  jump.innerHTML = "";
-  phases.forEach(p=>{
-    const b = document.createElement("button");
-    b.className = "chip" + (p.id===id ? " active" : "");
-    b.textContent = p.id;
-    b.onclick = ()=> send({type:"setPhase", value:p.id});
-    jump.appendChild(b);
-  });
-}
+// PLAYER STATE
+let myId = null;
+let myName = "";
+let myAvatar = "😄";
+let myAvatarUrl = null;
+let myPhase = 1;
+let roomId = null;
+let hostId = null;
 
-// ------ Players Rendering ------
+let players = {};
 
-function renderPlayers(){
-  lobbyPlayers.innerHTML = "";
-  playerList.innerHTML   = "";
 
-  Object.entries(players).forEach(([id,p])=>{
-    const isMe   = id === myId;
-    const isHost = id === hostId;
-    const avatar = p.avatar || "🐶";
-    const label  = `${avatar} ${p.name||"Spieler"}${isMe?" (Du)":""}${isHost?" [Host]":""}`;
+// ===============================
+// WEBSOCKET CONNECTION
+// ===============================
+function connectWS() {
+  ws = new WebSocket(SERVER_URL);
 
-    const lobRow = document.createElement("div");
-    lobRow.className="rowItem";
-    lobRow.innerHTML = `<div>${label}</div>`;
-    lobbyPlayers.appendChild(lobRow);
+  ws.onopen = () => {
+    statusTag.textContent = "🟢 Verbunden";
+  };
 
-    const gameRow = document.createElement("div");
-    gameRow.className="rowItem";
-    gameRow.innerHTML = `<div>${label}</div><div>Phase ${p.phase||1} • Σ ${p.score||0}</div>`;
-    playerList.appendChild(gameRow);
-  });
+  ws.onclose = () => {
+    statusTag.textContent = "🔴 Offline";
+  };
 
-  const me = players[myId];
-  selfNameTag.textContent = me ? (me.name||"Spieler") : "—";
-  roomTag.textContent = myRoomId || "—";
+  ws.onerror = () => {
+    statusTag.textContent = "🔴 Fehler";
+  };
 
-  renderPhase();
-}
+  ws.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
 
-// ------ Chat ------
-
-function addChatMessage(name, text, isSystem=false){
-  const div = document.createElement("div");
-  div.className = "chatMsg";
-  if(isSystem){
-    div.innerHTML = `<span class="chatSystem">${text}</span>`;
-  } else {
-    div.innerHTML = `<span class="chatName">${name}:</span>${text}`;
-  }
-  chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-function sendChat(){
-  const txt = (chatInput.value||"").trim();
-  if(!txt) return;
-  chatInput.value = "";
-  send({type:"chat", text:txt});
-}
-
-// ------ Punkte ------
-function calcPoints(){
-  const lowN   = Math.max(0, parseInt(low.value   || "0",10));
-  const highN  = Math.max(0, parseInt(high.value  || "0",10));
-  const jokerN = Math.max(0, parseInt(joker.value || "0",10));
-  const pts = lowN*5 + highN*10 + jokerN*20;
-  outPoints.value = String(pts);
-  return pts;
-}
-
-// ------ WebSocket ------
-
-function connect(){
-  if(ws && (ws.readyState===WebSocket.OPEN || ws.readyState===WebSocket.CONNECTING)) return;
-  setStatus("Verbinde...", false);
-  ws = new WebSocket(WS_URL);
-
-  ws.onopen = ()=> setStatus("Verbunden – noch keinem Raum beigetreten", true);
-  ws.onclose= ()=> setStatus("Getrennt", false);
-  ws.onerror= ()=> setStatus("Fehler – keine Verbindung", false);
-
-  ws.onmessage = ev=>{
-    let msg;
-    try{ msg = JSON.parse(ev.data); }catch{return;}
-
-    // Raum erstellt
-    if(msg.type==="roomCreated"){
-      myId     = msg.playerId;
-      myRoomId = msg.roomId;
-      hostId   = msg.hostId;
-      players  = msg.players || {};
-      lobbyRoomCode.textContent = myRoomId;
-      lobbyRoleHint.textContent = "Du bist der Host dieses Raums.";
-      btnLobbyStart.disabled = false;
-      showScreen("lobby");
-      renderPlayers();
-      addChatMessage("System",`Raum ${myRoomId} erstellt.`,true);
+    // Welcome
+    if (msg.type === "welcome") {
+      myId = msg.playerId;
       return;
     }
 
-    // Raum beigetreten
-    if(msg.type==="roomJoined"){
-      myId     = msg.playerId;
-      myRoomId = msg.roomId;
-      hostId   = msg.hostId;
-      players  = msg.players || {};
-      lobbyRoomCode.textContent = myRoomId;
-      lobbyRoleHint.textContent = hostId===myId ? "Du bist der Host." : "Du bist Spieler in diesem Raum.";
-      btnLobbyStart.disabled = hostId!==myId;
-      showScreen("lobby");
-      renderPlayers();
-      addChatMessage("System",`Du bist Raum ${myRoomId} beigetreten.`,true);
+    // Room created
+    if (msg.type === "roomCreated") {
+      roomId = msg.roomId;
+      hostId = msg.hostId;
+      players = msg.players;
+      showLobby();
       return;
     }
 
-    if(msg.type==="roomError"){
-      startError.textContent = msg.message || "Unbekannter Fehler.";
+    // Joined room
+    if (msg.type === "roomJoined") {
+      roomId = msg.roomId;
+      hostId = msg.hostId;
+      players = msg.players;
+      showLobby();
       return;
     }
 
-    // Spieler-Update
-    if(msg.type==="players"){
-      hostId  = msg.hostId || hostId;
-      players = msg.players || {};
-      renderPlayers();
-      if(currentScreen==="lobby"){
-        lobbyRoleHint.textContent = hostId===myId ? "Du bist der Host." : "Du bist Spieler in diesem Raum.";
-        btnLobbyStart.disabled = hostId!==myId;
+    // Error joining
+    if (msg.type === "joinError") {
+      startError.textContent = msg.message;
+      return;
+    }
+
+    // Lobby players update
+    if (msg.type === "playersUpdated") {
+      players = msg.players;
+      renderLobbyPlayers();
+      renderGamePlayers();
+      return;
+    }
+
+    // KI Avatar updated
+    if (msg.type === "avatarUpdated") {
+      if (players[msg.id]) {
+        players[msg.id].avatarUrl = msg.avatarUrl;
+
+        if (msg.id === myId) {
+          myAvatarUrl = msg.avatarUrl;
+          avatarSelected.innerHTML = `<img src="${msg.avatarUrl}" class="avatarIcon">`;
+        }
+
+        renderLobbyPlayers();
+        renderGamePlayers();
       }
+      avatarGenStatus.textContent = "Avatar aktualisiert!";
       return;
     }
 
-    // Spielstart
-    if(msg.type==="roomStart"){
-      showScreen("game");
-      renderPlayers();
-      addChatMessage("System","Das Spiel wurde gestartet.",true);
+    if (msg.type === "avatarError") {
+      avatarGenStatus.textContent = msg.message;
       return;
     }
 
-    // Runde startet (Phase beendet)
-    if(msg.type==="roundStart"){
-      const isFinisher = msg.finisher === myId;
-      const pname = players[msg.finisher]?.name || msg.name || "Jemand";
-      finisherInfo.textContent = isFinisher
-        ? "Du hast diese Runde beendet. Du bekommst 0 Punkte."
-        : `${pname} hat diese Runde beendet. Trage deine Restkarten ein.`;
+    // Game started
+    if (msg.type === "gameStarted") {
+      showGame();
+      return;
+    }
 
-      if(isFinisher){
-        scoreInputs.style.display = "none";
-        outPoints.value = "0";
-      } else {
-        scoreInputs.style.display = "";
-        low.value="0"; high.value="0"; joker.value="0";
-        calcPoints();
-      }
-      scoreStatus.textContent = "";
+    // Someone finished phase
+    if (msg.type === "phaseDone") {
       scorePanel.classList.remove("hidden");
-      return;
-    }
-
-    // Score-Update
-    if(msg.type==="scoreUpdate"){
-      if(players[msg.id]){
-        players[msg.id].score = msg.total;
-        renderPlayers();
-      }
-      scoreStatus.textContent = "Punkte aktualisiert.";
+      finisherInfo.textContent = `${msg.name} hat die Phase beendet!`;
+      lowInput.value = 0;
+      highInput.value = 0;
+      jokerInput.value = 0;
+      outPoints.value = 0;
       return;
     }
 
     // Chat
-    if(msg.type==="chat"){
-      const p = players[msg.id];
-      const name = p ? `${p.avatar||""} ${p.name||"Spieler"}` : "Spieler";
-      addChatMessage(name, msg.text);
+    if (msg.type === "chat") {
+      const div = document.createElement("div");
+      div.className = "chatMsg";
+      div.textContent = `${msg.name}: ${msg.text}`;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
       return;
     }
   };
 }
 
-function send(obj){
-  if(ws && ws.readyState===WebSocket.OPEN){
-    ws.send(JSON.stringify(obj));
-  } else {
-    setStatus("Nicht verbunden – neu verbinden.", false);
-  }
-}
+// Reconnect button
+btnReconnect.onclick = connectWS;
 
-// ------ Avatar-Grid ------
+connectWS();
 
-function renderAvatarGrid(){
+
+// ===============================
+// UI: START SCREEN
+// ===============================
+const emojiAvatars = ["🐶","🐱","🐸","🐵","🐼","🦊","🐯","🐰","🐙","🐧","🦁","🐢"];
+
+function buildAvatarGrid() {
   avatarGrid.innerHTML = "";
-  AVATARS.forEach(em=>{
-    const btn = document.createElement("button");
-    btn.type="button";
-    btn.className = "avatarChip" + (em===myAvatar ? " active":"");
-    btn.textContent = em;
-    btn.onclick = ()=>{
+  emojiAvatars.forEach((em) => {
+    const d = document.createElement("div");
+    d.textContent = em;
+    d.onclick = () => {
       myAvatar = em;
+      myAvatarUrl = null;
       avatarSelected.textContent = em;
-      document.querySelectorAll(".avatarChip").forEach(c=>c.classList.remove("active"));
-      btn.classList.add("active");
     };
-    avatarGrid.appendChild(btn);
+    avatarGrid.appendChild(d);
   });
 }
+buildAvatarGrid();
 
-// ------ UI Events ------
-
-// Raum erstellen
-btnCreateRoom.onclick = ()=>{
-  startError.textContent = "";
-  const name = (startName.value||"").trim() || "Spieler";
-  connect();
-  send({type:"createRoom", name, avatar:myAvatar});
-};
-
-// Raum beitreten
-btnJoinRoom.onclick = ()=>{
-  startError.textContent = "";
-  const name = (startName.value||"").trim() || "Spieler";
-  const code = (joinCode.value||"").trim();
-  if(!code){
-    startError.textContent = "Bitte einen Raumcode eingeben.";
+btnGenAvatar.onclick = () => {
+  const prompt = avatarPrompt.value.trim();
+  if (!prompt) {
+    avatarGenStatus.textContent = "Bitte Prompt eingeben.";
     return;
   }
-  connect();
-  send({type:"joinRoom", roomId:code, name, avatar:myAvatar});
+
+  avatarGenStatus.textContent = "Generiere…";
+
+  ws.send(JSON.stringify({
+    type: "generateAvatar",
+    prompt
+  }));
 };
 
-// Name-Änderung
-startName.onchange = ()=>{
-  const name = (startName.value||"").trim() || "Spieler";
-  send({type:"setName", value:name});
+
+// ===============================
+// LOBBY
+// ===============================
+function showLobby() {
+  hide("#screenStart");
+  hide("#screenGame");
+  show("#screenLobby");
+
+  lobbyRoomCode.textContent = roomId;
+  lobbyRoleHint.textContent = myId === hostId ? "Du bist Host" : "Du bist Spieler";
+  renderLobbyPlayers();
+}
+
+btnCreateRoom.onclick = () => {
+  const name = startName.value.trim();
+  if (!name) {
+    startError.textContent = "Name eingeben!";
+    return;
+  }
+
+  myName = name;
+
+  ws.send(JSON.stringify({
+    type: "createRoom",
+    name,
+    avatarUrl: myAvatarUrl,
+    avatar: myAvatar
+  }));
 };
 
-// Reconnect
-btnReconnect.onclick = ()=> connect();
+btnJoinRoom.onclick = () => {
+  const name = startName.value.trim();
+  if (!name) {
+    startError.textContent = "Name eingeben!";
+    return;
+  }
+  if (!joinCode.value.trim()) {
+    startError.textContent = "Code eingeben!";
+    return;
+  }
 
-// Lobby verlassen
-btnLeaveLobby.onclick = ()=> {
+  myName = name;
+
+  ws.send(JSON.stringify({
+    type: "joinRoom",
+    name,
+    roomId: joinCode.value.trim(),
+    avatarUrl: myAvatarUrl,
+    avatar: myAvatar
+  }));
+};
+
+btnLobbyStart.onclick = () => {
+  if (myId !== hostId) return;
+
+  ws.send(JSON.stringify({ type:"startGame" }));
+};
+
+btnLeaveLobby.onclick = () => {
   location.reload();
 };
 
-// Lobby: Spiel starten
-btnLobbyStart.onclick = ()=>{
-  if(hostId !== myId) return;
-  send({type:"startGame"});
+function renderLobbyPlayers() {
+  lobbyPlayers.innerHTML = "";
+  for (const id in players) {
+    const p = players[id];
+    const row = document.createElement("div");
+    row.className = "pRow";
+
+    const av = p.avatarUrl
+      ? `<img src="${p.avatarUrl}" class="avatarIcon">`
+      : `<div class="avatarIcon" style="display:flex;align-items:center;justify-content:center;font-size:20px">${p.avatar || "😄"}</div>`;
+
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px">
+        ${av}
+        <b>${p.name}</b> ${id === hostId ? "(Host)" : ""}
+      </div>
+    `;
+    lobbyPlayers.appendChild(row);
+  }
+}
+
+
+// ===============================
+// GAME VIEW
+// ===============================
+function showGame() {
+  hide("#screenStart");
+  hide("#screenLobby");
+  show("#screenGame");
+
+  renderPhase();
+  renderJump();
+  renderGamePlayers();
+}
+
+function renderPhase() {
+  const p = phases[myPhase - 1];
+  num.textContent = p.id;
+  title.textContent = p.title;
+  rule.textContent = p.rule;
+  examplesEl.innerHTML = p.examples.map(e => `<li>${e}</li>`).join("");
+  barfill.style.width = (myPhase / 10 * 100) + "%";
+  hint.textContent = `${myPhase} / 10`;
+}
+
+function renderJump() {
+  jump.innerHTML = "";
+  phases.forEach((p) => {
+    const b = document.createElement("button");
+    b.textContent = p.id;
+    if (p.id === myPhase) b.classList.add("active");
+    b.onclick = () => setPhase(p.id);
+    jump.appendChild(b);
+  });
+}
+
+
+// ===============================
+// GAME EVENTS
+// ===============================
+function setPhase(n) {
+  myPhase = Math.max(1, Math.min(10, n));
+  renderPhase();
+
+  ws.send(JSON.stringify({
+    type: "setPhase",
+    value: myPhase
+  }));
+}
+
+btnPrev.onclick = () => setPhase(myPhase - 1);
+btnNext.onclick = () => setPhase(myPhase + 1);
+btnReset.onclick = () => setPhase(1);
+
+btnFinish.onclick = () => {
+  ws.send(JSON.stringify({ type:"phaseDone" }));
 };
 
-// Phase Buttons
-btnPrev.onclick  = ()=> send({type:"setPhase", value: currentPhaseId()-1});
-btnNext.onclick  = ()=> send({type:"setPhase", value: currentPhaseId()+1});
-btnReset.onclick = ()=> send({type:"setPhase", value:1});
 
-// Phase beendet
-btnFinish.onclick = ()=> send({type:"phaseDone"});
+// ===============================
+// SCORE
+// ===============================
+function updatePoints() {
+  const low = parseInt(lowInput.value || 0, 10);
+  const high = parseInt(highInput.value || 0, 10);
+  const jok = parseInt(jokerInput.value || 0, 10);
 
-// Score Inputs
-[low,high,joker].forEach(el=>el.addEventListener("input", calcPoints));
+  const pts = low * 5 + high * 10 + jok * 20;
+  outPoints.value = pts;
+}
 
-// Score abschicken
-btnSubmit.onclick = ()=>{
-  if(!myId || !players[myId]) return;
-  const isFinisher = finisherInfo.textContent.includes("Du hast diese Runde beendet");
-  const pts = isFinisher ? 0 : calcPoints();
-  send({type:"scoreSubmit", points:pts});
-  scorePanel.classList.add("hidden");
-  scoreStatus.textContent = "";
+lowInput.oninput = updatePoints;
+highInput.oninput = updatePoints;
+jokerInput.oninput = updatePoints;
+
+submitScore.onclick = () => {
+  const pts = parseInt(outPoints.value || 0, 10);
+
+  ws.send(JSON.stringify({
+    type: "scoreSubmit",
+    points: pts
+  }));
+
+  scoreStatus.textContent = "Punkte gespeichert!";
+  setTimeout(() => scorePanel.classList.add("hidden"), 1200);
 };
 
-// Chat
-chatSend.onclick = sendChat;
-chatInput.addEventListener("keydown", e=>{
-  if(e.key==="Enter") sendChat();
-});
 
-// ------ Init ------
-renderAvatarGrid();
-showScreen("start");
-renderPhase();
-connect();
+// ===============================
+// GAME PLAYER LIST
+// ===============================
+function renderGamePlayers() {
+  const box = $("#playerList");
+  box.innerHTML = "";
+
+  for (const id in players) {
+    const p = players[id];
+
+    const row = document.createElement("div");
+    row.className = "pRow";
+
+    const av = p.avatarUrl
+      ? `<img src="${p.avatarUrl}" class="avatarIcon">`
+      : `<div class="avatarIcon" style="display:flex;align-items:center;justify-content:center;font-size:20px">${p.avatar || "😄"}</div>`;
+
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px">
+        ${av}
+        <b>${p.name}</b>
+      </div>
+      <div>
+        Phase ${p.phase} • ${p.score} Punkte
+      </div>
+    `;
+
+    box.appendChild(row);
+  }
+}
+
+
+// ===============================
+// CHAT
+// ===============================
+chatSend.onclick = () => {
+  const text = chatInput.value.trim();
+  if (!text) return;
+
+  ws.send(JSON.stringify({
+    type:"chat",
+    text
+  }));
+
+  chatInput.value = "";
+};
+
+chatInput.onkeypress = (e) => {
+  if (e.key === "Enter") chatSend.onclick();
+};
