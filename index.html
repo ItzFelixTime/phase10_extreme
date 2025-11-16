@@ -12,26 +12,83 @@
     <header>
       <div>
         <h1>Phase 10 – Autistic Master</h1>
+        <small class="muted">Online Rooms • Host mit Code • Chat</small>
       </div>
       <div class="row">
-        <span id="statusTag" class="tag">🔴 Getrennt</span>
+        <span id="statusTag" class="tag">🔴 Nicht verbunden</span>
+        <span class="tag">Raum: <b id="roomTag">—</b></span>
         <span class="tag">Du: <b id="selfNameTag">—</b></span>
+        <button id="btnReconnect" class="ghost" title="Neu verbinden">🔄</button>
       </div>
     </header>
 
-    <section class="content">
-      <div class="panel" style="margin-bottom:12px">
-        <div class="row" style="justify-content:space-between;align-items:flex-end;gap:12px">
+    <!-- ============ STARTSCREEN ============ -->
+    <section id="screenStart" class="content">
+      <div class="panel">
+        <div class="kicker">Willkommen</div>
+        <p class="muted">Wähle einen Namen & Avatar, dann erstelle einen Raum oder tritt einem Raum bei.</p>
+
+        <div class="row" style="align-items:flex-end;gap:12px">
           <div style="flex:1">
             <label class="kicker">Dein Name</label>
-            <input id="nameInput" placeholder="Name eingeben" />
+            <input id="startName" placeholder="Name" />
           </div>
-          <button id="btnReconnect" class="ghost">🔄 Neu verbinden</button>
+          <div style="width:80px;text-align:center">
+            <label class="kicker">Avatar</label>
+            <div id="avatarSelected" style="font-size:32px;line-height:1;margin-top:4px">😄</div>
+          </div>
+        </div>
+
+        <div id="avatarGrid" class="avatarGrid" style="margin-top:8px"></div>
+      </div>
+
+      <div class="panel" style="margin-top:12px">
+        <div class="row">
+          <button id="btnCreateRoom" class="primary stretch">Ich hoste (neuen Raum erstellen)</button>
+        </div>
+        <div class="row" style="margin-top:8px;align-items:center">
+          <div style="flex:1">
+            <label class="kicker">Raumcode</label>
+            <input id="joinCode" placeholder="z.B. 48291" />
+          </div>
+          <button id="btnJoinRoom" class="stretch">Raum beitreten</button>
+        </div>
+        <div id="startError" class="errorText"></div>
+      </div>
+    </section>
+
+    <!-- ============ LOBBY ============ -->
+    <section id="screenLobby" class="content hidden">
+      <div class="panel">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <div>
+            <div class="kicker">Lobby</div>
+            <div>Raumcode: <b id="lobbyRoomCode">—</b></div>
+            <div id="lobbyRoleHint" class="muted"></div>
+          </div>
+          <button id="btnLeaveLobby" class="ghost">Lobby verlassen</button>
         </div>
       </div>
 
+      <div class="panel" style="margin-top:12px">
+        <div class="kicker">Spieler im Raum</div>
+        <div id="lobbyPlayers" class="roster" style="margin-top:8px"></div>
+      </div>
+
+      <div class="panel" style="margin-top:12px">
+        <div class="row">
+          <button id="btnLobbyStart" class="primary stretch">Spiel starten</button>
+        </div>
+        <div id="lobbyInfo" class="muted" style="margin-top:4px">
+          Nur der Host kann das Spiel starten.
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SPIEL ============ -->
+    <section id="screenGame" class="content hidden">
       <div class="two">
-        <!-- Linke Seite: Phasen & Scoring -->
+        <!-- Linke Seite: Phase & Scoring -->
         <div class="panel">
           <div class="kicker">Deine aktuelle Phase</div>
           <div class="row" style="align-items:flex-end;gap:16px">
@@ -64,12 +121,10 @@
             <button id="btnFinish" class="primary stretch">Phase beendet!</button>
           </div>
 
-          <!-- Scoring Panel -->
+          <!-- Wertung -->
           <div id="scorePanel" class="panel inset hidden" style="margin-top:14px">
             <div class="kicker">Wertung für diese Runde</div>
-            <div class="muted" style="margin-bottom:6px">
-              <span id="finisherInfo">–</span>
-            </div>
+            <div id="finisherInfo" class="muted" style="margin-bottom:6px">–</div>
 
             <div id="scoreInputs" class="row">
               <div class="scoreCol">
@@ -97,24 +152,25 @@
           </div>
         </div>
 
-        <!-- Rechte Seite: Spieler-Liste -->
-        <div class="panel">
-  <div class="kicker">Spieler & Fortschritt</div>
-  <div id="playerList" class="roster" style="margin-top:8px"></div>
-</div>
+        <!-- Rechte Seite: Spieler & Chat -->
+        <div>
+          <div class="panel">
+            <div class="kicker">Spieler & Fortschritt</div>
+            <div id="playerList" class="roster" style="margin-top:8px"></div>
+          </div>
 
-<div class="panel" style="margin-top:14px">
-  <div class="kicker">Chat</div>
-
-  <div id="chatBox" class="chatBox"></div>
-
-  <div class="row" style="margin-top:10px">
-    <input id="chatInput" placeholder="Nachricht eingeben…" />
-    <button id="chatSend" class="primary">Senden</button>
-  </div>
-</div>
+          <div class="panel" style="margin-top:14px">
+            <div class="kicker">Chat</div>
+            <div id="chatBox" class="chatBox"></div>
+            <div class="row" style="margin-top:10px">
+              <input id="chatInput" placeholder="Nachricht eingeben…" />
+              <button id="chatSend" class="primary">Senden</button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
+
   </div>
 </div>
 
